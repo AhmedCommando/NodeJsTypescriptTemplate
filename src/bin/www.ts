@@ -1,5 +1,8 @@
 import * as debug from 'debug';
+import * as fs from 'fs';
 import * as http from 'http';
+import * as path from 'path';
+import spdy = require('spdy');
 
 import App from '../app';
 
@@ -17,33 +20,19 @@ const normalizePort = (val: number|string): number|string|boolean => {
   }
 };
 
-const onError = (error: NodeJS.ErrnoException) => {
-  if (error.syscall !== 'listen') { throw error; }
-  const bind = (typeof port === 'string') ? 'Pipe ' + port : 'Port ' + port;
-  switch (error.code) {
-    case 'EACCES':
-      console.error(`${bind} requires elevated privileges`);
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(`${bind} is already in use`);
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-};
-
-const onListening = () => {
-  const addr = server.address();
-  const bind = (typeof addr === 'string') ? `pipe ${addr}` : `port ${addr.port}`;
-  debug(`Listening on ${bind}`);
-};
 
 const port = normalizePort(process.env.PORT || 3000);
 App.set('port', port);
 
-const server = http.createServer(App);
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+const options = {
+  cert:  fs.readFileSync(__dirname + '/ssl/cert.pem'),
+  key: fs.readFileSync(__dirname + '/ssl/key.pem'),
+};
+
+spdy.createServer(options, App)
+    .listen(port, (error) => {
+      if (error) {
+        console.error(error);
+        process.exit(1);
+      }
+    });

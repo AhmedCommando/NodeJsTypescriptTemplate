@@ -27,6 +27,10 @@ gulp.task('build', () => {
           
 });
 
+gulp.task('copyCert', function() {
+  gulp.src('src/bin/ssl/**/*.pem')
+  .pipe(gulp.dest('build/bin/ssl'));
+});
 
 gulp.task('server', function() {
   gulp.start('build', function() {
@@ -41,6 +45,7 @@ gulp.task('server', function() {
 })
 
 gulp.task('start', function(){
+  gulp.start('copyCert')
   gulp.start('server')
   livereload.listen()
   gulp.watch(['./src/*', './src/**/*.ts'], function() {
